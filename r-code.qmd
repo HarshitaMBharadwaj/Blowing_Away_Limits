@@ -1,0 +1,641 @@
+---
+title: "Wind Power Analysis in United States - 2018"
+author: Harshita Madhukar Bharadwaj
+date: November 22, 2023 
+format: 
+  html:
+    toc: true 
+    toc-location: right
+    theme: flatly
+    self-contained: true
+---
+
+```{r}
+#| label: setup 
+#| include: false
+
+# Load libraries and settings here
+library(tidyverse)
+library(here)
+
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE,
+  comment = "#>",
+  fig.path = "figs/", # Folder where rendered plots are saved
+  fig.width = 7.252, # Default plot width
+  fig.height = 4, # Default plot height
+  fig.retina = 3 # For better plot resolution
+)
+
+# Put any other "global" settings here, e.g. a ggplot theme:
+theme_set(theme_bw(base_size = 20))
+
+
+```
+
+```{r}
+# Write code below here to load any data used in project
+
+#install.packages("readxl")
+#install.packages("here")
+library(readxl)
+library(here)
+
+path <- here("data_processed", "US_state_Wind_Energy_Facts_2018_copy.xlsx")
+data <- read_excel(path)
+```
+
+## **Load the data**
+
+**Description:** The dataset provides insights into the wind energy production across various U.S. states, focusing on key metrics related to installed capacity, homes powered, investment, online projects, and the number of wind turbines.
+
+**Date of Acquisition:** November 15, 2023
+
+**Original File Name:** The dataset, initially named "US_State_Wind_Energy_Facts_2018," was sourced from a formatted Excel spreadsheet available on data.world at the following link: <https://data.world/makeovermonday/2019w8>.
+
+**Original Data Source:** While the primary data source is the American Wind Energy Association (AWEA) (<https://www.awea.org/>), the specific dataset was obtained from an article that references the AWEA's information.
+
+**Variables and Descriptions:**
+
+-   **Ranking:** Represents the state's rank order based on installed capacity.
+
+-   **State:** Denotes the U.S. state under consideration.
+
+-   **Installed Capacity (MW):** Indicates the installed capacity in megawatts.
+
+-   **Equivalent Homes Powered:** Reflects the number of homes powered by wind energy.
+
+-   **Total Investment (\$ Millions):** Represents the total investment in millions of dollars.
+
+-   **Wind Projects Online:** Signifies the number of wind projects currently operational.
+
+-   **\# of Wind Turbines:** Indicates the total number of wind turbines within each state.
+
+## Preview the data
+
+**View(data)** - It is used to give the overall view of the data spreadsheet . Through this one can explore the rows, columns and values of the spreadsheet.
+
+```{r}
+View(data)
+```
+
+**head(data)** - this is used to display first 6 rows of the top of the dataframe.
+
+```{r}
+head(data)
+```
+
+**tail(data)**- this is used to display last 6 rows of the bottom of the dataframe.
+
+```{r}
+tail(data)
+```
+
+**summary(data)** - Gives the quick summary of the entire dataframe, like the minimum, maximum, 1st quartile, median, mean, 3rd quartile, length ,class and mode
+
+```{r}
+summary(data)
+```
+
+**glimpse(data)**
+
+```{r}
+glimpse(data)
+```
+
+Quick plot of Installed Capacity (MW) vs State
+
+```{r}
+library(ggplot2)
+
+data %>%
+  ggplot(aes(
+    y = State, 
+    x = `Installed Capacity (MW)`)) +
+  geom_col(
+    width = 0.7, 
+    alpha = 0.8) +
+  theme_minimal()
+```
+
+Following a preliminary data preview, key observations have been discerned:
+
+**Variable Composition:** The dataset comprises a total of 7 columns and 50 rows. The variables identified include "Ranking", "State", "Installed Capacity (MW)" ,"Equivalent Homes Powered", "Total Investment (\$ Millions)" ,"Wind Projects Online" and "\# of Wind Turbines".
+
+**Variable Types Clarification:** The determination of variable types can be accomplished through the use of either typeof() or glimpse() functions, providing insights into the nature of each variable.
+
+```{r}
+typeof(data$Ranking)
+typeof(data$State)
+typeof(data$`Installed Capacity (MW)`)
+typeof(data$`Equivalent Homes Powered`)
+typeof(data$`Total Investment ($ Millions)`)
+typeof(data$`Wind Projects Online`)
+typeof(data$`# of Wind Turbines`)
+
+glimpse(data)
+```
+
+**Identification of Missing Values:** By viewing the data it reveals the presence of missing values denoted as "NA" within the dataset. Specifically, the columns "State," "Installed Capacity (MW)," and "Wind Projects Online" exhibit instances of these "NA" values.
+
+```{r}
+col_1 <- any(data$Ranking == "NA", na.rm = TRUE)
+col_1
+
+col_2 <- any(data$State == "NA", na.rm = TRUE)
+col_2
+
+col_3 <- any(data$`Installed Capacity (MW)` == "NA", na.rm = TRUE)
+col_3
+
+col_4 <- any(data$`Equivalent Homes Powered` == "NA", na.rm = TRUE)
+col_4
+
+col_5 <- any(data$`Total Investment ($ Millions)` == "NA", na.rm = TRUE)
+col_5
+
+col_6 <- any(data$`Wind Projects Online` == "NA", na.rm = TRUE)
+col_6
+
+col_7 <- any(data$`# of Wind Turbines` == "NA", na.rm = TRUE)
+col_7
+```
+
+It is noteable that not all variables adhere to the anticipated data type encoding. Variables such as "Ranking," "Equivalent Homes Powered," "Total Investment (\$ Millions)," and "\# of Wind Turbines," expected to be numeric, are instead characterized as character types. This discrepancy necessitates attention to ensure data consistency and accuracy in subsequent analyses.
+
+## **Clean the data**
+
+For generating standardized and code-friendly variable names, the **clean_names()** function from the Janitor package can be employed.
+
+```{r}
+library("ggplot2") 
+library("dplyr") 
+library("tidyverse") 
+library("janitor") 
+
+clean_data <- data %>%
+  clean_names() 
+
+# Convert all non-numeric data types in variables except state to numeric
+for (col in names(clean_data)) {
+  if (col != "state") {
+    if (!is.numeric(clean_data[[col]])) {
+      clean_data[[col]] <- as.numeric(as.character(clean_data[[col]]))
+    }
+  }
+}
+
+
+
+View(clean_data) 
+```
+
+The adjustments involve changing column names from their original form to a standardized format, is as follows:
+
+1.  "Ranking" is now represented as "ranking"
+
+2.  "State" is now represented as "state"
+
+3.  "Installed Capacity (MW)" is now represented as "installed_capacity_mw"
+
+4.  "Equivalent Homes Powered" is now represented as "equivalent_homes_powered"
+
+5.  "Total Investment (\$ Millions)" is now represented as "total_investment_millions"
+
+6.  "Wind Projects Online" is now represented as "wind_projects_online"
+
+7.  "\# of Wind Turbines" is now represented as "number_of_wind_turbines"
+
+In addition to the column name changes, a data type conversion process has been implemented for non-numeric (character) data types within essential variables. This conversion is achieved through a systematic iteration using a for loop. The affected variables include "ranking," "installed_capacity_mw," "equivalent_homes_powered," "total_investment_millions," "wind_projects_online," and "number_of_wind_turbines." The purpose of this data type conversion is to ensure consistency and numerical compatibility across these specific variables, which is crucial for the following analytical tasks.
+
+A quick visualization after cleaning the data :
+
+Exploring the Relationship Between Equivalent Homes Powered and Number of Wind Turbines Across U.S. States: A Scatter Plot Analysis
+
+```{r}
+
+clean_data %>%
+  mutate(
+    equivalent_homes_powered = as.numeric(as.character(equivalent_homes_powered)),
+    number_of_wind_turbines = as.numeric(as.character(number_of_wind_turbines))
+  ) %>%
+  ggplot() +
+  geom_point(aes(x = equivalent_homes_powered, y = number_of_wind_turbines)) +
+  theme_minimal()
+```
+
+This scatter plot visualizes the relationship between the number of equivalent homes powered by wind energy and the number of wind turbines across different U.S. states. Each point represents a state, and the x-axis shows the quantity of homes powered, while the y-axis depicts the count of wind turbines. The plot helps identify states that exhibit specific patterns in their wind energy infrastructure---whether more homes are powered relative to the number of turbines or vice versa. It provides insights into the efficiency and scale of wind energy deployment in different regions, contributing to a nuanced understanding of the data.
+
+## **Summarize the data**
+
+```{r}
+
+summary_installed_capacity <- summary(clean_data$installed_capacity_mw)
+summary_installed_capacity
+
+summary_investment <- summary(clean_data$total_investment_millions)
+summary_investment
+
+summary_homes_powered <- summary(clean_data$equivalent_homes_powered)
+summary_homes_powered
+
+
+clean_data$capacity_per_dollar <- (clean_data$installed_capacity_mw) / (clean_data$total_investment_millions)
+
+clean_data$capacity_per_home <- (clean_data$installed_capacity_mw) / (clean_data$equivalent_homes_powered)
+
+
+summary_capacity_per_dollar <- summary(clean_data$capacity_per_dollar)
+summary_capacity_per_dollar
+
+summary_capacity_per_home <- summary(clean_data$capacity_per_home)
+summary_capacity_per_home
+
+
+view(clean_data)
+```
+
+1.  **Installed Capacity (MW):**
+
+    -   **Insight:** Calculated the mean, median, and standard deviation of installed capacity across states.
+
+    -   **Outcome:** Provides a comprehensive view of the central tendency and variability in installed capacity, helping identify patterns and outliers.
+
+2.  **Total Investment (\$ Millions):**
+
+    -   **Insight:** Computed the mean, median, and standard deviation of total investment in millions of dollars.
+
+    -   **Outcome:** Offers a clear understanding of the central tendency and dispersion in investment values, aiding in the assessment of financial commitments.
+
+3.  **Equivalent Homes Powered:**
+
+    -   **Insight:** Investigated the mean, median, and standard deviation of the number of homes powered by wind in each state.
+
+    -   **Outcome:** Provides insights into the central tendency and variability in the social impact of wind energy, gauging the number of homes affected.
+
+4.  **Capacity per Dollar Invested:**
+
+    -   **Insight:** Introduced a new variable by dividing installed capacity by total investment and examined its summary statistics.
+
+    -   **Outcome:** Identifies states achieving higher installed capacity efficiency for each dollar invested, indicating economic efficiency in capacity building.
+
+5.  **Capacity per Home Powered:**
+
+    -   **Insight:** Created a new variable by dividing installed capacity by the number of homes powered and analyzed its summary statistics.
+
+    -   **Outcome:** Explores the efficiency of installed capacity concerning the number of homes powered, offering insights into the social impact and effectiveness of wind energy projects.
+
+**Explanation of Summary Measures:**
+
+1.  **Installed Capacity (MW):**
+
+    -   **Insight:** The summary statistics (mean, median, and standard deviation) for installed capacity provide insights into the central tendency and variability among states. This metric is crucial for identifying states with significant capacity.
+
+2.  **Total Investment (\$ Millions):**
+
+    -   **Insight:** The summary measures for total investment shed light on the central tendency and spread of financial commitments across states.
+
+3.  **Equivalent Homes Powered:**
+
+    -   **Insight:** Summary statistics for homes powered offer insights into the central tendency and variability of the social impact of wind energy in different states.
+
+4.  **Capacity per Dollar Invested:**
+
+    -   **Insight:** The new variable is created to assess the efficiency of capacity building relative to financial investment. Summary statistics help identify states achieving higher efficiency in capacity per dollar invested.
+
+5.  **Capacity per Home Powered:**
+
+    -   **Insight:** Another computed measure evaluates the efficiency of installed capacity in relation to the number of homes powered. States with higher values demonstrate greater efficiency in providing energy to homes.
+
+**Key Findings:**
+
+Identifying leaders in wind energy requires a comprehensive evaluation beyond installed capacity, considering economic and social dimensions. States achieving higher installed capacity per dollar invested showcase economic efficiency. Assessing capacity per home powered provides insights into the social impact and efficiency of wind energy projects. The analysis contributes to a nuanced understanding of states that stand out as leaders in various facets of wind energy production.
+
+## **Visualize the data**
+
+"The 'ranking' column in the dataset represents the ranking of U.S. states, and it currently contains missing values (NA) after the last entered rank, which is 41. To address this, we aim to assign continuous ranking numbers to the rows with missing values while preserving the existing data. The approach involves converting the 'ranking' column to numeric format, identifying rows with NA, determining the maximum numeric value in the 'ranking' column, and assigning continuous ranking numbers starting from the last entered rank + 1 to the rows with NA. This ensures a seamless and continuous ranking for all U.S. states.
+
+```{r}
+
+na_rows <- is.na(clean_data$ranking)
+
+max_rank <- max(clean_data$ranking, na.rm = TRUE)
+
+clean_data$ranking[na_rows] <- seq_len(sum(na_rows)) + max_rank
+
+View(clean_data)
+
+
+
+```
+
+### Visualization that highlights leadership in install_capacity of the US states.
+
+#### Bar graph visualization :
+
+This bar chart offers a useful visualization of U.S. installed electricity generation capacity by state. Examining the data reveals some meaningful insights.
+
+```{r}
+library("dplyr")
+library("ggplot2")
+library("cowplot")
+
+filtered_data <- clean_data[clean_data$installed_capacity_mw != 0, ]
+
+sorted_data <- filtered_data %>%  
+  arrange(desc(installed_capacity_mw)) %>%
+  mutate(fill = ifelse(state == "TEXAS", "gray", "steelblue"))
+
+ggplot(sorted_data, aes(x = installed_capacity_mw, 
+                        y = fct_reorder(state, installed_capacity_mw),
+                        fill = fill)) + 
+  geom_bar(stat = "identity", width = 0.7, alpha = 0.8) +
+  labs(title = "Installed Capacity Counts by State",  
+       x = "Installed Capacity (MW)",
+       y = "State") +  
+  scale_fill_identity() +
+  scale_x_continuous(limits = c(0, 24000), breaks = seq(0, 24000, by = 3000)) +
+  theme_minimal_vgrid() +
+  theme(axis.text.y = element_text(size = 8)) +
+  theme(legend.position = "none")+
+    scale_x_continuous(
+    breaks = c(0, 3000, 6000, 9000, 12000, 15000, 18000, 21000, 24000),
+    limits = c(0 , 24000),
+    expand = expand_scale(mult = c(0, 0.05)))
+
+```
+
+Trailing Texas are the states including Oklahoma, Iowa, California, Kansas, Illinois, Minnesota, Oregon, Colorado and Washington. A noticeable gap exists between Texas the other states. It should be noted that complete data is only available for 41 states here. The other 9 states have been excluded due to data limitations.
+
+The chart employs several best practices in data visualization. The horizontal x-axis provides clear quantitative capacity metrics labeled in megawatts. This enables precise comparison of the installed capacity values across states. The vertical y-axis then lists each of the 41 states included ordered from highest to lowest installed capacity. This facilitates insight into the ranking of states by their electricity generation infrastructure assets.
+
+In summary, by leveraging thoughtful color coding and precise scales, this bar chart enables valuable analysis into the regional split of electricity generation assets across states. It highlights infrastructure disparities between leading states like Texas and laggards excluded due to incomplete data. Comparing installed capacity visually here provides more meaningful insights than the raw numbers alone.
+
+#### Map Visualization:
+
+The visualization depicts the installed capacity of wind projects across different states in the United States. Each state is represented by its respective abbreviation, and the color intensity corresponds to the installed capacity in each state. The darker shades signify higher installed capacities.
+
+```{r}
+#install.packages('rnaturalearth')
+devtools::install_github("ropensci/rnaturalearthhires")
+devtools::install_github("ropensci/rnaturalearthdata")
+
+library(maps)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(rnaturalearthhires)
+library(ggplot2)
+library(stringr)
+library(viridis)
+library(dplyr)
+
+```
+
+```{r}
+
+# Data preparation code
+install_cap <- clean_data %>%
+  select(name = state, installed_capacity_mw) %>%
+  mutate(name = stringr::str_to_title(name)) %>% 
+  mutate(installed_capacity_mw = installed_capacity_mw / 10^2)
+
+us_states <- ne_states(
+  country = 'united states of america',
+  returnclass = 'sf'
+) %>% 
+  filter(!name %in% c('Alaska', 'Hawaii')) %>% 
+  left_join(install_cap, by = "name")
+
+us_states <- us_states %>%
+  mutate(installed_capacity_mw = replace(installed_capacity_mw, is.na(installed_capacity_mw), 0)) 
+
+# Extracting centroids and state abbreviations
+centroids <- as.data.frame(st_coordinates(st_centroid(us_states)))
+names(centroids) <- c('label_x', 'label_y')
+
+us_states <- bind_cols(us_states, centroids)
+
+state_abbs <- tibble::tribble(
+  ~state_name,              ~state_abb,
+  "Alabama",             "AL",
+  "Alaska",             "AK",
+  "Arizona",             "AZ",
+  "Arkansas",             "AR",
+  "California",             "CA",
+  "Colorado",             "CO",
+  "Connecticut",             "CT",
+  "Delaware",             "DE",
+  "Florida",             "FL",
+  "Georgia",             "GA",
+  "Hawaii",             "HI",
+  "Idaho",             "ID",
+  "Illinois",             "IL",
+  "Indiana",             "IN",
+  "Iowa",             "IA",
+  "Kansas",             "KS",
+  "Kentucky",             "KY",
+  "Louisiana",             "LA",
+  "Maine",             "ME",
+  "Maryland",             "MD",
+  "Massachusetts",             "MA",
+  "Michigan",             "MI",
+  "Minnesota",             "MN",
+  "Mississippi",             "MS",
+  "Missouri",             "MO",
+  "Montana",             "MT",
+  "Nebraska",             "NE",
+  "Nevada",             "NV",
+  "New Hampshire",             "NH",
+  "New Jersey",             "NJ",
+  "New Mexico",             "NM",
+  "New York",             "NY",
+  "North Carolina",             "NC",
+  "North Dakota",             "ND",
+  "Ohio",             "OH",
+  "Oklahoma",             "OK",
+  "Oregon",             "OR",
+  "Pennsylvania",             "PA",
+  "Rhode Island",             "RI",
+  "South Carolina",             "SC",
+  "South Dakota",             "SD",
+  "Tennessee",             "TN",
+  "Texas",             "TX",
+  "Utah",             "UT",
+  "Vermont",             "VT",
+  "Virginia",             "VA",
+  "Washington",             "WA",
+  "West Virginia",             "WV",
+  "Wisconsin",             "WI",
+  "Wyoming",             "WY",
+  "District of Columbia",             "DC",
+  "Marshall Islands",             "MH",
+  "Armed Forces Africa",             "AE",
+  "Armed Forces Americas",             "AA",
+  "Armed Forces Canada",             "AE",
+  "Armed Forces Europe",             "AE",
+  "Armed Forces Middle East",             "AE",
+  "Armed Forces Pacific",             "AP"
+)
+
+# Merging state abbreviations
+us_states <- us_states %>%
+  left_join(state_abbs, by = c('name' = 'state_name'))
+
+# Plotting
+ggplot(us_states) +
+  geom_sf(aes(fill = installed_capacity_mw)) +
+  geom_label(aes(x = label_x,
+                 y = label_y,
+                 label = state_abb),
+             size = 2
+               ) +
+  scale_fill_viridis_c(
+    trans = 'sqrt',
+    option = "plasma",
+    limits = c(0, 300)
+  ) +
+  theme_void(base_size = 15) +
+  theme(
+    legend.position = 'bottom',
+    legend.text = element_text(size = 8),
+    legend.title = element_text(size = 12)
+  ) +
+  labs(
+    fill = 'Installed Capacity X 10^2'
+  ) +
+  ggtitle("Installed Capacity Counts by State") +
+  theme(plot.title = element_text(size = 20, hjust = 0.5))
+
+```
+
+Key components of the visualization:
+
+1.  **Map Representation:** The map uses the geometrical boundaries of each state to represent their geographical location.
+
+2.  **Color Gradient:** The color gradient represents the Installed Capacity in MegaWatts x 10\^2 of wind projects, with warmer (lighter) colors indicating higher capacities. The color scale is based on the Viridis color palette. From this it is evident that Texas is leading in terms of install capacity over all other states.
+
+3.  **State Abbreviations:** Each state is labeled with its two-letter abbreviation. These labels are placed close to the centroid of each state for better readability.
+
+4.  **Legend:** The legend at the bottom provides a reference for interpreting the color scale. It indicates the relationship between color intensity and the corresponding installed capacity, to understand the magnitude of wind project capacity in each state.
+
+The visualization serves as an effective tool for understanding the distribution of wind project capacities across U.S. states, by making way to quickly identify states with significant contributions to the overall installed capacity.
+
+While a bar graph conveys the same information, a map offers a visually appealing representation of installed wind capacity in each U.S. state. The map's color gradient intuitively illustrates varying capacities, capturing attention and facilitating quick comparisons. The spatial layout aids in identifying regional patterns, making it an engaging and informative visual tool. Unlike a bar graph, the map leverages geographic context to enhance comprehension, providing a holistic view of wind project distributions and capacities across states.
+
+### Leadership in Investment per Megawatt by State
+
+The visual representation titled "Leadership in Investment per Megawatt by State" offers a fine tuned examination of the economic efficiency of various U.S. states in the realm of wind energy investment. The central metric, investment per megawatt (MW), stands as a pivotal indicator, shedding light on how states strategically allocate financial resources for optimal wind energy production.
+
+```{r}
+
+investment_data <- clean_data %>%
+  filter(!is.na(total_investment_millions) & !is.na(installed_capacity_mw) &
+         installed_capacity_mw != 0) %>%
+  mutate(
+    #total_investment_millions = as.numeric(total_investment_millions),
+    #installed_capacity_mw = as.numeric(installed_capacity_mw),
+    investment_per_mw = round(total_investment_millions / installed_capacity_mw, 2)
+  )
+
+View(investment_data)
+
+```
+
+```{r}
+investment_data <- investment_data %>% arrange(investment_per_mw)
+
+investment_data$state <- factor(investment_data$state, levels = investment_data$state)
+
+investment_per_mw_plot <- ggplot(investment_data, aes(x = investment_per_mw, y = reorder(state, investment_per_mw))) +
+  geom_segment(
+    aes(x = 0, xend = investment_per_mw,
+        y = state, yend = state),
+    color = 'black') +
+  geom_point(size = 1.5, color = 'steelblue') +
+  labs(title = "Leadership in Investment per Megawatt by State",
+       x = "Investment per Megawatt (Millions)",
+       y = "State") +
+     scale_x_continuous(limits = c(0, 10), breaks = seq(0, 10, by = 1))+
+  theme_minimal_vgrid() +
+  theme(axis.text.y = element_text(size = 7))+
+     theme(legend.position = "none")+
+    scale_x_continuous(
+    breaks = c(0,1,2,3,4,5,6,7,8,9,10),
+    limits = c(0 , 10),
+    expand = expand_scale(mult = c(0, 0.05)))
+
+
+print(investment_per_mw_plot)
+
+```
+
+The lollipop chart, each state is elegantly positioned along the y-axis, with the x-axis depicting investment per megawatt in millions. The elevation of each state's dot on the chart, coupled with connecting grey lines to the baseline (0 on the x-axis), illuminates the degree of economic efficiency in wind energy investment. States with higher dots and longer black lines emerge as leaders , signifying their ability to achieve heightened installed capacity per unit of financial investment.
+
+The interpretation of the graph suggests a positive correlation between the financial investments made in wind energy projects and the resultant installed capacity. States with elevated dots not only showcase current efficiency but also signal a promising potential for future development in the wind power sector. Conversely, states with lower dots and shorter black lines may benefit from strategic recalibration of their investment strategies to enhance economic viability. It is important to highlight that the states of Alabama, Arkansas, Florida, Georgia, Kentucky, Louisiana, Mississippi, South Carolina, and Virginia have been excluded from the presented visualization. This omission is attributed to the absence of available data for these states. It is imperative to acknowledge this limitation, as these states were not included in the analysis due to a lack of data presence.
+
+According to the visualization, the state of Rhode Island exhibits the highest investment value, with 6.41 million dollars per megawatt (MW). Notably, there is a substantial divergence in investment figures between Rhode Island and other states. Following are Delaware, California, Utah, Idaho, South Dakota, Arizona, Indiana, Massachusetts, Maryland, Wyoming, Pennsylvania, Oregon, West Virginia, Alaska, New Hampshire, New York, Vermont, Nevada, Wisconsin, and Hawaii, all recording investment values exceeding 2.00 million dollars per MW. It is pertinent to note that, with the exception of states for which data is unavailable, all other states exhibit investments below the 2 million dollars per MW threshold.
+
+In essence, this visual exploration offers valuable insights into the economic efficiency of states in harnessing wind energy resources. While it refrains from making explicit predictions about future development, the graph provides a robust foundation for understanding which states are poised for sustainable growth in the dynamic landscape of wind power.
+
+### Visualization of number of wind projects online by state
+
+The included bar chart visualizes the number of wind energy projects currently online across U.S. states.
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+
+clean_data <- clean_data %>% 
+  filter(wind_projects_online > 0)
+
+
+clean_data <- clean_data %>% 
+  arrange(desc(wind_projects_online))
+
+# Create plot
+projects_online_plot <- ggplot(clean_data, aes(x = reorder(state, wind_projects_online), y = wind_projects_online)) +
+  geom_bar(stat = "identity", fill = "steelblue") + 
+  coord_flip() +
+  labs(title = "Number of Wind Projects Online by State",
+       x = "State",
+       y = "Number of Projects Online") +
+  theme_minimal_vgrid() +
+  theme(axis.text.y = element_text(size = 6))+
+     theme(legend.position = "none")
+print(projects_online_plot)
+```
+
+This clear and insightful bar chart visualizes the number of active wind power projects across leading U.S. states during 2018. Right away, the sheer magnitude of projects in Texas jumps off the graphic with 136 online wind sites. In fact, Texas boasts over 26 more projects than runner up Iowa, revealing a commanding lead in wind infrastructure deployment.
+
+Seeing these state-by-state figures visualized, as opposed to in a table, better highlights the acute imbalance and Texas' dominant leadership position. The state-ordered x-axis allows precise comparison to peer states, emphasizing the gap.
+
+The importance of this leadership cannot be understated when considering wind power's rapid growth and Texas' integral role there. More wind projects directly catalyze greater renewable energy production and grid reliability. With over 130 sites, Texas generates the most wind power in the U.S. by a large margin. The associated clean energy and economic impact benefits the state through job and revenue creation.
+
+Additionally, Texas' heavy investment signals positive policy conditions and incentives for wind. This further draws continuous investment from major developers, creating a clustering effect.
+
+In summary, it is clear Texas' leading capacity not only confirms its friendly policies but also multiplies the benefits of clean energy, jobs and new business attracted to the state. The gap visualized makes an excellent case for trailing states to assess why Texas pulls ahead.
+
+## **Summarize your analysis**
+
+1.  **Issues with the Original Chart:**
+
+The original chart faced several design challenges, violating key principles of effective data visualization. Firstly, the inclusion of large turbine icons introduced unnecessary complexity and distraction, hindering the clear communication of data. The x-axis, comprising state names, was disproportionately long compared to the y-axis, disrupting the chart's proportions. The cluttered x-axis, with tilted labels and inconsistent font usage, further impeded readability. The presence of windmill icons required constant reference to the legend, disrupting the viewer's experience. Overall, the original chart lacked uniformity in label placement and font styles, making it challenging for viewers to interpret the information seamlessly.
+
+2.  **Improvements in the First Revised Chart:**
+
+In the first revision, a simple bar graph was introduced, rectifying the original chart's flaws. This modification resulted in a proportional and visually cleaner representation. The use of a bar graph addressed the issues of clutter and distraction caused by windmill icons. By placing state names on the y-axis and the corresponding installed capacity on the x-axis, the revised chart achieved better balance and readability. However, recognizing the potential for enhanced visual appeal and regional insights, a subsequent improvement involved transitioning to a map representation. The map's color gradient effectively conveyed the varying capacities across states, leveraging geographic context for a more engaging and informative visual experience.
+
+3.  **Message and Design Choices in the Second Chart:**
+
+The second chart, a lollipop chart titled "Leadership in Investment per Megawatt by State," communicates information about economic efficiency in wind energy investment. The design choice of using lollipop charts offers a clear visual representation of each state's investment efficiency. Elevating each state's dot along the y-axis and connecting it to the baseline with black lines enables viewers to quickly assess which states lead in achieving higher installed capacity per unit of financial investment.
+
+The message conveyed is that states with higher dots and longer lines are more economically efficient in their wind energy investments. The choice of omitting certain states due to data unavailability is transparently communicated, acknowledging the limitations of the analysis.
+
+In addition, a bar chart illustrating the "Leadership based on the number of wind projects online by state" highlights Texas's dominance in wind infrastructure. The clear visualization of the significant gap between Texas and other states emphasizes the state's leadership role in wind project deployment. The bar chart effectively communicates the importance of Texas' leadership in driving clean energy production, job creation, and economic impact.
+
+Both visualizations aim to provide insightful and actionable information, guiding states in their wind energy strategies based on economic efficiency and project deployment leadership. It must also be noted that the data set does have missing values and information of states.
+
+## 
